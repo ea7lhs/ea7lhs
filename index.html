@@ -437,6 +437,77 @@
             color: var(--accent-tertiary);
         }
 
+        .search-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-primary);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-button {
+            padding: 1rem 2rem;
+            background: var(--accent-primary);
+            border: none;
+            border-radius: 4px;
+            color: var(--bg-primary);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            background: var(--accent-secondary);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .search-button:active {
+            transform: translateY(0);
+        }
+
+        .search-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 3px solid var(--accent-primary);
+            color: var(--text-secondary);
+            border-radius: 4px;
+        }
+
+        .search-no-results {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255, 51, 102, 0.1);
+            border-left: 3px solid var(--accent-tertiary);
+            color: var(--text-secondary);
+            border-radius: 4px;
+        }
+
         @media (max-width: 768px) {
             h1 { font-size: 2rem; }
             .callsign { font-size: 2.5rem; }
@@ -447,6 +518,8 @@
             .two-column { grid-template-columns: 1fr; }
             .contacts-table { font-size: 0.85rem; }
             .contacts-table th, .contacts-table td { padding: 0.5rem; }
+            .search-container { flex-direction: column; }
+            .search-button { width: 100%; }
         }
     </style>
 </head>
@@ -525,7 +598,16 @@
             </div>
 
             <div class="section">
-                <div class="section-title">Latest 20 Contacts</div>
+                <div class="section-title">Search Contacts</div>
+                <div class="search-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search by callsign, name, country, mode...">
+                    <button id="search-button" class="search-button">Search</button>
+                </div>
+                <div id="search-results" style="margin-top: 1.5rem;"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Latest 10 Contacts</div>
                 <div style="overflow-x: auto;">
                     <table class="contacts-table">
                         <thead>
@@ -715,12 +797,16 @@
             }
         }
 
+        let logbookText = '';
+
         async function loadLogbook() {
             try {
                 const response = await fetch('logbook.adi');
                 if (!response.ok) throw new Error('File not found');
                 
                 const text = await response.text();
+                logbookText = text; // Store for searching
+                
                 const parser = new LogbookParser();
                 parser.parseADI(text);
                 
@@ -739,7 +825,7 @@
                 // Top countries
                 const topCountries = Object.entries(stats.countryCount)
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 10);
+                    .slice(0, 5);
                 
                 const countriesContainer = document.getElementById('top-countries');
                 countriesContainer.innerHTML = topCountries.map(([country, count]) => `
@@ -763,7 +849,7 @@
                 `).join('');
                 
                 // Recent contacts
-                const recentContacts = parser.getRecentContacts(20);
+                const recentContacts = parser.getRecentContacts(10);
                 const contactsContainer = document.getElementById('recent-contacts');
                 contactsContainer.innerHTML = recentContacts.map(contact => `
                     <tr>
@@ -788,8 +874,131 @@
             }
         }
 
+        function searchContacts(searchTerm) {
+            if (!searchTerm || searchTerm.trim().length === 0) {
+                return { results: [], message: 'Please enter a search term' };
+            }
+
+            const term = searchTerm.toLowerCase().trim();
+            const results = [];
+            
+            // Parse the logbook text and search
+            const records = logbookText.split('<eor>');
+            
+            for (let record of records) {
+                if (record.trim().length === 0 || record.includes('<eoh>')) continue;
+                
+                const contact = {};
+                const fieldRegex = /<(\w+):(\d+)>([^<]*)/g;
+                let match;
+                
+                while ((match = fieldRegex.exec(record)) !== null) {
+                    const [, fieldName, , fieldValue] = match;
+                    contact[fieldName.toLowerCase()] = fieldValue.trim();
+                }
+                
+                if (!contact.call) continue;
+                
+                // Search in multiple fields
+                const searchableText = [
+                    contact.call || '',
+                    contact.name || '',
+                    contact.country || '',
+                    contact.mode || '',
+                    contact.band || '',
+                    contact.qth || '',
+                    contact.gridsquare || ''
+                ].join(' ').toLowerCase();
+                
+                if (searchableText.includes(term)) {
+                    results.push(contact);
+                }
+            }
+            
+            return { 
+                results: results.sort((a, b) => {
+                    const dateA = parseInt(a.qso_date || 0);
+                    const dateB = parseInt(b.qso_date || 0);
+                    if (dateA !== dateB) return dateB - dateA;
+                    const timeA = parseInt(a.time_on || 0);
+                    const timeB = parseInt(b.time_on || 0);
+                    return timeB - timeA;
+                }),
+                message: null
+            };
+        }
+
+        function displaySearchResults(searchData) {
+            const container = document.getElementById('search-results');
+            
+            if (searchData.message) {
+                container.innerHTML = `<div class="search-info">${searchData.message}</div>`;
+                return;
+            }
+            
+            if (searchData.results.length === 0) {
+                container.innerHTML = `<div class="search-no-results">No contacts found matching your search.</div>`;
+                return;
+            }
+            
+            const parser = new LogbookParser();
+            const limitedResults = searchData.results.slice(0, 50); // Limit to 50 results
+            
+            container.innerHTML = `
+                <div class="search-info">Found ${searchData.results.length} contact${searchData.results.length !== 1 ? 's' : ''} ${searchData.results.length > 50 ? '(showing first 50)' : ''}</div>
+                <div style="overflow-x: auto; margin-top: 1rem;">
+                    <table class="contacts-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Callsign</th>
+                                <th>Name</th>
+                                <th>Country</th>
+                                <th>Mode</th>
+                                <th>Band</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${limitedResults.map(contact => `
+                                <tr>
+                                    <td>${parser.formatDisplayDate(contact.qso_date)}</td>
+                                    <td>${parser.formatTime(contact.time_on)}</td>
+                                    <td class="callsign-cell">${contact.call}</td>
+                                    <td>${contact.name || '-'}</td>
+                                    <td class="country-cell">${contact.country || '-'}</td>
+                                    <td><span class="mode-badge">${contact.mode || '-'}</span></td>
+                                    <td><span class="band-badge">${contact.band || '-'}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
         // Load logbook on page load
         loadLogbook();
+
+        // Setup search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search-input');
+            const searchButton = document.getElementById('search-button');
+            
+            function performSearch() {
+                const searchTerm = searchInput.value;
+                const results = searchContacts(searchTerm);
+                displaySearchResults(results);
+            }
+            
+            searchButton.addEventListener('click', performSearch);
+            
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        });
     </script>
 </body>
 </html>
