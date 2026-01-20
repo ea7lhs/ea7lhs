@@ -1,0 +1,11 @@
+{
+  "callsign": "EA7LHS",
+  "name": "Daniel",
+  "location": "Loja, Spain",
+  "display": {
+    "topCountries": 5,
+    "topModes": 5,
+    "recentContacts": 10,
+    "maxSearchResults": 50
+  }
+}

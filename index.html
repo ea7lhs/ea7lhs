@@ -239,6 +239,52 @@
             overflow: visible;
         }
 
+        .year-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .year-nav-button {
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-primary);
+            color: var(--accent-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+        }
+
+        .year-nav-button:hover {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+            transform: scale(1.1);
+        }
+
+        .year-nav-button:active {
+            transform: scale(0.95);
+        }
+
+        .current-year {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-secondary);
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+            min-width: 120px;
+            text-align: center;
+        }
+
         .activity-months {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
@@ -556,7 +602,12 @@
             </div>
 
             <div class="section">
-                <div class="section-title">Activity Map - 2026</div>
+                <div class="section-title">Activity Map</div>
+                <div class="year-controls">
+                    <button class="year-nav-button" id="prev-year">◄</button>
+                    <div class="current-year" id="current-year">2026</div>
+                    <button class="year-nav-button" id="next-year">►</button>
+                </div>
                 <div class="activity-grid">
                     <div class="activity-months">
                         <div class="month-label">Jan</div>
@@ -798,9 +849,56 @@
         }
 
         let logbookText = '';
+        let config = {};
+        let currentYear = new Date().getFullYear();
+        let statsData = null;
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('config.json');
+                if (!response.ok) {
+                    // Default config if file not found
+                    return {
+                        callsign: "EA7LHS",
+                        name: "Daniel",
+                        location: "Loja, Spain",
+                        display: {
+                            topCountries: 5,
+                            topModes: 10,
+                            recentContacts: 10,
+                            maxSearchResults: 50
+                        }
+                    };
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error loading config:', error);
+                // Return default config
+                return {
+                    callsign: "EA7LHS",
+                    name: "Daniel",
+                    location: "Loja, Spain",
+                    display: {
+                        topCountries: 5,
+                        topModes: 10,
+                        recentContacts: 10,
+                        maxSearchResults: 50
+                    }
+                };
+            }
+        }
 
         async function loadLogbook() {
             try {
+                // Load config first
+                config = await loadConfig();
+                
+                // Update callsign in header
+                document.getElementById('callsign').textContent = config.callsign;
+                
+                // Update current year display
+                document.getElementById('current-year').textContent = currentYear;
+                
                 const response = await fetch('logbook.adi');
                 if (!response.ok) throw new Error('File not found');
                 
@@ -811,6 +909,7 @@
                 parser.parseADI(text);
                 
                 const stats = parser.getStats();
+                statsData = stats; // Store for year navigation
                 
                 // Update stats
                 document.getElementById('total-qsos').textContent = stats.totalQSOs;
@@ -818,14 +917,13 @@
                 document.getElementById('total-modes').textContent = stats.totalModes;
                 document.getElementById('total-bands').textContent = stats.totalBands;
                 
-                // Render activity heatmap
-                const heatmap = new ActivityHeatmap('activity-grid', 2026);
-                heatmap.render(stats.dailyActivity);
+                // Render activity heatmap with current year
+                renderActivityMap();
                 
-                // Top countries
+                // Top countries (use config)
                 const topCountries = Object.entries(stats.countryCount)
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 5);
+                    .slice(0, config.display.topCountries);
                 
                 const countriesContainer = document.getElementById('top-countries');
                 countriesContainer.innerHTML = topCountries.map(([country, count]) => `
@@ -835,10 +933,10 @@
                     </div>
                 `).join('');
                 
-                // Top modes
+                // Top modes (use config)
                 const topModes = Object.entries(stats.modeCount)
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 10);
+                    .slice(0, config.display.topModes);
                 
                 const modesContainer = document.getElementById('top-modes');
                 modesContainer.innerHTML = topModes.map(([mode, count]) => `
@@ -848,8 +946,8 @@
                     </div>
                 `).join('');
                 
-                // Recent contacts
-                const recentContacts = parser.getRecentContacts(10);
+                // Recent contacts (use config)
+                const recentContacts = parser.getRecentContacts(config.display.recentContacts);
                 const contactsContainer = document.getElementById('recent-contacts');
                 contactsContainer.innerHTML = recentContacts.map(contact => `
                     <tr>
@@ -862,6 +960,12 @@
                         <td><span class="band-badge">${contact.band || '-'}</span></td>
                     </tr>
                 `).join('');
+                
+                // Update section title for recent contacts
+                const recentContactsTitle = document.querySelectorAll('.section-title')[3];
+                if (recentContactsTitle) {
+                    recentContactsTitle.textContent = `Latest ${config.display.recentContacts} Contacts`;
+                }
                 
                 // Show content
                 document.getElementById('loading').style.display = 'none';
@@ -942,10 +1046,11 @@
             }
             
             const parser = new LogbookParser();
-            const limitedResults = searchData.results.slice(0, 50); // Limit to 50 results
+            const maxResults = config.display?.maxSearchResults || 50;
+            const limitedResults = searchData.results.slice(0, maxResults);
             
             container.innerHTML = `
-                <div class="search-info">Found ${searchData.results.length} contact${searchData.results.length !== 1 ? 's' : ''} ${searchData.results.length > 50 ? '(showing first 50)' : ''}</div>
+                <div class="search-info">Found ${searchData.results.length} contact${searchData.results.length !== 1 ? 's' : ''} ${searchData.results.length > maxResults ? `(showing first ${maxResults})` : ''}</div>
                 <div style="overflow-x: auto; margin-top: 1rem;">
                     <table class="contacts-table">
                         <thead>
@@ -977,8 +1082,28 @@
             `;
         }
 
+        function renderActivityMap() {
+            if (!statsData) return;
+            const heatmap = new ActivityHeatmap('activity-grid', currentYear);
+            heatmap.render(statsData.dailyActivity);
+            document.getElementById('current-year').textContent = currentYear;
+        }
+
         // Load logbook on page load
         loadLogbook();
+
+        // Setup year navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('prev-year').addEventListener('click', function() {
+                currentYear--;
+                renderActivityMap();
+            });
+
+            document.getElementById('next-year').addEventListener('click', function() {
+                currentYear++;
+                renderActivityMap();
+            });
+        });
 
         // Setup search functionality
         document.addEventListener('DOMContentLoaded', function() {
