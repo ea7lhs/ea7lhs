@@ -5,7 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EA7LHS - Logbook Statistics</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="default.css">
+    <script>
+        // Load CSS from config
+        (async function loadCSS() {
+            try {
+                const response = await fetch('config.json');
+                const config = response.ok ? await response.json() : { cssFile: 'default.css' };
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = config.cssFile || 'default.css';
+                document.head.appendChild(link);
+            } catch (error) {
+                console.error('Error loading CSS config:', error);
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'default.css';
+                document.head.appendChild(link);
+            }
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -310,6 +328,7 @@
                         callsign: "EA7LHS",
                         name: "Daniel",
                         location: "Loja, Spain",
+                        cssFile: "default.css",
                         display: {
                             topCountries: 5,
                             topModes: 10,
@@ -326,6 +345,7 @@
                     callsign: "EA7LHS",
                     name: "Daniel",
                     location: "Loja, Spain",
+                    cssFile: "default.css",
                     display: {
                         topCountries: 5,
                         topModes: 10,
