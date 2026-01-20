@@ -383,6 +383,11 @@ h1 {
     font-weight: 700;
 }
 
+.contacts-table tr:hover .country-cell {
+    color: var(--bg-primary);
+    font-weight: 900;
+}
+
 .mode-badge {
     display: inline-block;
     padding: 0.4rem 1rem;
@@ -413,6 +418,12 @@ h1 {
     text-transform: uppercase;
 }
 
+.contacts-table tr:hover .band-badge {
+    background: var(--bg-primary);
+    border-color: var(--bg-primary);
+    color: var(--accent-secondary);
+}
+
 .qsl-btn {
     display: inline-block;
     padding: 0.5rem 1rem;
@@ -433,6 +444,12 @@ h1 {
     background: var(--accent-primary);
     box-shadow: 3px 3px 0 #000000;
     transform: none;
+}
+
+.contacts-table tr:hover .qsl-btn {
+    background: var(--bg-primary);
+    border-color: var(--bg-primary);
+    color: var(--accent-tertiary);
 }
 
 .top-list {
