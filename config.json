@@ -3,6 +3,7 @@
   "name": "Daniel",
   "location": "Loja, Spain",
   "cssFile": "classic.css",
+  "qslBackgroundImage": "bg.jpg",
   "display": {
     "topCountries": 5,
     "topModes": 5,

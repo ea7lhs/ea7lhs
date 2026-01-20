@@ -112,6 +112,7 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.contact = null;
                 this.config = null;
+                this.backgroundImage = null;
             }
 
             async loadConfig() {
@@ -122,7 +123,8 @@
                             callsign: "EA7LHS",
                             name: "Daniel",
                             location: "Loja, Spain",
-                            cssFile: "default.css"
+                            cssFile: "default.css",
+                            qslBackgroundImage: ""
                         };
                     }
                     return await response.json();
@@ -131,9 +133,26 @@
                         callsign: "EA7LHS",
                         name: "Daniel",
                         location: "Loja, Spain",
-                        cssFile: "default.css"
+                        cssFile: "default.css",
+                        qslBackgroundImage: ""
                     };
                 }
+            }
+
+            async loadBackgroundImage() {
+                if (!this.config.qslBackgroundImage || this.config.qslBackgroundImage.trim() === '') {
+                    return null;
+                }
+
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = () => {
+                        console.warn('Could not load background image:', this.config.qslBackgroundImage);
+                        resolve(null);
+                    };
+                    img.src = this.config.qslBackgroundImage;
+                });
             }
 
             async verifyContact(call, date, time) {
@@ -202,13 +221,49 @@
                 const textPrimary = styles.getPropertyValue('--text-primary').trim();
                 const textSecondary = styles.getPropertyValue('--text-secondary').trim();
 
-                // Background gradient
-                const gradient = ctx.createLinearGradient(0, 0, w, h);
-                gradient.addColorStop(0, bgPrimary);
-                gradient.addColorStop(0.5, bgSecondary);
-                gradient.addColorStop(1, bgCard);
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, w, h);
+                // Background image if available
+                if (this.backgroundImage) {
+                    // Calculate dimensions to cover without stretching
+                    const imgRatio = this.backgroundImage.width / this.backgroundImage.height;
+                    const canvasRatio = w / h;
+                    
+                    let drawWidth, drawHeight, offsetX, offsetY;
+                    
+                    if (imgRatio > canvasRatio) {
+                        // Image is wider than canvas
+                        drawHeight = h;
+                        drawWidth = h * imgRatio;
+                        offsetX = (w - drawWidth) / 2;
+                        offsetY = 0;
+                    } else {
+                        // Image is taller than canvas
+                        drawWidth = w;
+                        drawHeight = w / imgRatio;
+                        offsetX = 0;
+                        offsetY = (h - drawHeight) / 2;
+                    }
+                    
+                    // Apply blur filter
+                    ctx.filter = 'blur(8px)';
+                    ctx.drawImage(this.backgroundImage, offsetX, offsetY, drawWidth, drawHeight);
+                    ctx.filter = 'none';
+                    
+                    // Add semi-transparent overlay
+                    const overlayGradient = ctx.createLinearGradient(0, 0, w, h);
+                    overlayGradient.addColorStop(0, this.hexToRgba(bgPrimary, 0.7));
+                    overlayGradient.addColorStop(0.5, this.hexToRgba(bgSecondary, 0.6));
+                    overlayGradient.addColorStop(1, this.hexToRgba(bgCard, 0.7));
+                    ctx.fillStyle = overlayGradient;
+                    ctx.fillRect(0, 0, w, h);
+                } else {
+                    // Background gradient (when no image)
+                    const gradient = ctx.createLinearGradient(0, 0, w, h);
+                    gradient.addColorStop(0, bgPrimary);
+                    gradient.addColorStop(0.5, bgSecondary);
+                    gradient.addColorStop(1, bgCard);
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, w, h);
+                }
 
                 // Grid pattern overlay (more subtle)
                 ctx.strokeStyle = this.hexToRgba(accentPrimary, 0.05);
@@ -400,6 +455,9 @@
 
             const generator = new QSLGenerator('qsl-canvas');
             generator.config = await generator.loadConfig();
+            
+            // Load background image if specified
+            generator.backgroundImage = await generator.loadBackgroundImage();
             
             // Update station callsign in header
             document.getElementById('station-call').textContent = generator.config.callsign;
