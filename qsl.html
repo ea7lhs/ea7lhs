@@ -5,213 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QSL Card Generator</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #151b2e;
-            --bg-card: #1a2235;
-            --accent-primary: #00ff88;
-            --accent-secondary: #00d4ff;
-            --accent-tertiary: #ff3366;
-            --text-primary: #e8f0f2;
-            --text-secondary: #8b9dc3;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Share Tech Mono', monospace;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 30%, rgba(0, 255, 136, 0.03), transparent 40%),
-                radial-gradient(circle at 80% 70%, rgba(0, 212, 255, 0.03), transparent 40%);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-            position: relative;
-            z-index: 2;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 3rem;
-            padding: 2rem;
-            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
-            border: 2px solid var(--accent-primary);
-            border-radius: 4px;
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 900;
-            color: var(--accent-primary);
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            letter-spacing: 2px;
-        }
-
-        .card-preview {
-            background: var(--bg-card);
-            padding: 2rem;
-            border-radius: 4px;
-            border: 2px solid var(--accent-primary);
-            margin-bottom: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        #qsl-canvas {
-            max-width: 100%;
-            height: auto;
-            border: 2px solid var(--accent-secondary);
-            border-radius: 4px;
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
-        }
-
-        .controls {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .btn {
-            padding: 1rem 2rem;
-            background: var(--accent-primary);
-            border: none;
-            border-radius: 4px;
-            color: var(--bg-primary);
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            background: var(--accent-secondary);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-secondary {
-            background: var(--bg-secondary);
-            color: var(--accent-primary);
-            border: 2px solid var(--accent-primary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--accent-primary);
-            color: var(--bg-primary);
-        }
-
-        .error {
-            background: rgba(255, 51, 102, 0.1);
-            border: 2px solid var(--accent-tertiary);
-            padding: 2rem;
-            border-radius: 4px;
-            text-align: center;
-            color: var(--accent-tertiary);
-        }
-
-        .info-box {
-            background: var(--bg-secondary);
-            padding: 1.5rem;
-            border-radius: 4px;
-            border-left: 3px solid var(--accent-primary);
-            margin-bottom: 2rem;
-        }
-
-        .info-box h3 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--accent-secondary);
-            margin-bottom: 1rem;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .info-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .info-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-        }
-
-        .info-value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-            color: var(--accent-primary);
-        }
-
-        .loading {
-            text-align: center;
-            padding: 4rem;
-            font-size: 1.5rem;
-            color: var(--accent-primary);
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
-        }
-
-        @media (max-width: 768px) {
-            h1 { font-size: 1.8rem; }
-            .container { padding: 1rem; }
-            .controls { flex-direction: column; width: 100%; }
-            .btn { width: 100%; }
-        }
-    </style>
+    <link rel="stylesheet" href="default.css">
 </head>
 <body>
     <div class="container">
@@ -220,16 +14,16 @@
             <div class="subtitle">73 de <span id="station-call">EA7LHS</span></div>
         </div>
 
-        <div id="loading" class="loading" style="display: none;">
+        <div id="loading" class="loading hidden">
             [GENERATING QSL CARD...]
         </div>
 
-        <div id="error" class="error" style="display: none;">
+        <div id="error" class="error hidden">
             <h2>ERROR</h2>
             <p id="error-message"></p>
         </div>
 
-        <div id="content" style="display: none;">
+        <div id="content" class="hidden">
             <div class="info-box">
                 <h3>Contact Details</h3>
                 <div class="info-grid">
@@ -264,7 +58,6 @@
                 <canvas id="qsl-canvas" width="1400" height="900"></canvas>
                 <div class="controls">
                     <button class="btn" id="download-btn">Download QSL Card</button>
-                    <button class="btn btn-secondary" id="regenerate-btn">Regenerate</button>
                 </div>
             </div>
         </div>
@@ -527,7 +320,7 @@
                 return;
             }
 
-            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading').classList.remove('hidden');
 
             const generator = new QSLGenerator('qsl-canvas');
             generator.config = await generator.loadConfig();
@@ -561,20 +354,15 @@
                 generator.downloadCard();
             });
 
-            // Setup regenerate button
-            document.getElementById('regenerate-btn').addEventListener('click', () => {
-                generator.drawCard();
-            });
-
             // Show content
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('content').style.display = 'block';
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
         }
 
         function showError(message) {
-            document.getElementById('loading').style.display = 'none';
+            document.getElementById('loading').classList.add('hidden');
             document.getElementById('error-message').textContent = message;
-            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').classList.remove('hidden');
         }
 
         // Start when page loads
