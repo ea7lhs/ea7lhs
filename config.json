@@ -4,6 +4,8 @@
   "location": "Loja, Spain",
   "cssFile": "classic.css",
   "qslBackgroundImage": "bg.jpg",
+  "qslBackgroundBlur": 4,
+  "qslBackgroundOpacity": 0.9,
   "display": {
     "topCountries": 5,
     "topModes": 5,

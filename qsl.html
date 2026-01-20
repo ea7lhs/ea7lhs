@@ -124,7 +124,9 @@
                             name: "Daniel",
                             location: "Loja, Spain",
                             cssFile: "default.css",
-                            qslBackgroundImage: ""
+                            qslBackgroundImage: "",
+                            qslBackgroundBlur: 8,
+                            qslBackgroundOpacity: 0.7
                         };
                     }
                     return await response.json();
@@ -134,7 +136,9 @@
                         name: "Daniel",
                         location: "Loja, Spain",
                         cssFile: "default.css",
-                        qslBackgroundImage: ""
+                        qslBackgroundImage: "",
+                        qslBackgroundBlur: 8,
+                        qslBackgroundOpacity: 0.7
                     };
                 }
             }
@@ -243,16 +247,21 @@
                         offsetY = (h - drawHeight) / 2;
                     }
                     
-                    // Apply blur filter
-                    ctx.filter = 'blur(8px)';
+                    // Apply blur filter from config
+                    const blurAmount = this.config.qslBackgroundBlur || 8;
+                    ctx.filter = `blur(${blurAmount}px)`;
                     ctx.drawImage(this.backgroundImage, offsetX, offsetY, drawWidth, drawHeight);
                     ctx.filter = 'none';
                     
-                    // Add semi-transparent overlay
+                    // Add semi-transparent overlay with configurable opacity
+                    const overlayOpacity = this.config.qslBackgroundOpacity !== undefined 
+                        ? this.config.qslBackgroundOpacity 
+                        : 0.7;
+                    
                     const overlayGradient = ctx.createLinearGradient(0, 0, w, h);
-                    overlayGradient.addColorStop(0, this.hexToRgba(bgPrimary, 0.7));
-                    overlayGradient.addColorStop(0.5, this.hexToRgba(bgSecondary, 0.6));
-                    overlayGradient.addColorStop(1, this.hexToRgba(bgCard, 0.7));
+                    overlayGradient.addColorStop(0, this.hexToRgba(bgPrimary, overlayOpacity));
+                    overlayGradient.addColorStop(0.5, this.hexToRgba(bgSecondary, overlayOpacity - 0.1));
+                    overlayGradient.addColorStop(1, this.hexToRgba(bgCard, overlayOpacity));
                     ctx.fillStyle = overlayGradient;
                     ctx.fillRect(0, 0, w, h);
                 } else {
