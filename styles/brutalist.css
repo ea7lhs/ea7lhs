@@ -358,11 +358,8 @@ h1 {
     background: var(--bg-primary);
 }
 
-.contacts-table tr:hover {
-    background: var(--accent-primary);
-}
-
 .contacts-table tr:hover td {
+    background: var(--accent-primary);
     color: var(--bg-primary);
     border-color: var(--accent-primary);
 }
@@ -401,9 +398,9 @@ h1 {
 }
 
 .contacts-table tr:hover .mode-badge {
-    background: var(--accent-secondary);
-    border-color: var(--accent-secondary);
-    color: var(--bg-primary);
+    background: var(--bg-primary);
+    border-color: var(--bg-primary);
+    color: var(--accent-secondary);
 }
 
 .band-badge {
@@ -428,7 +425,7 @@ h1 {
     display: inline-block;
     padding: 0.5rem 1rem;
     background: var(--accent-tertiary);
-    border: 3px solid var(--accent-secondary);
+    border: 3px solid var(--accent-tertiary);
     border-radius: 0;
     color: var(--bg-primary);
     text-decoration: none;
@@ -441,15 +438,16 @@ h1 {
 }
 
 .qsl-btn:hover {
-    background: var(--accent-primary);
+    background: var(--accent-secondary);
+    border-color: var(--accent-secondary);
     box-shadow: 3px 3px 0 #000000;
-    transform: none;
 }
 
 .contacts-table tr:hover .qsl-btn {
     background: var(--bg-primary);
     border-color: var(--bg-primary);
     color: var(--accent-tertiary);
+    box-shadow: none;
 }
 
 .top-list {
