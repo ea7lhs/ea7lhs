@@ -192,16 +192,26 @@
                 const w = this.canvas.width;
                 const h = this.canvas.height;
 
+                // Get colors from CSS variables
+                const styles = getComputedStyle(document.documentElement);
+                const bgPrimary = styles.getPropertyValue('--bg-primary').trim();
+                const bgSecondary = styles.getPropertyValue('--bg-secondary').trim();
+                const bgCard = styles.getPropertyValue('--bg-card').trim();
+                const accentPrimary = styles.getPropertyValue('--accent-primary').trim();
+                const accentSecondary = styles.getPropertyValue('--accent-secondary').trim();
+                const textPrimary = styles.getPropertyValue('--text-primary').trim();
+                const textSecondary = styles.getPropertyValue('--text-secondary').trim();
+
                 // Background gradient
                 const gradient = ctx.createLinearGradient(0, 0, w, h);
-                gradient.addColorStop(0, '#0a0e1a');
-                gradient.addColorStop(0.5, '#151b2e');
-                gradient.addColorStop(1, '#1a2235');
+                gradient.addColorStop(0, bgPrimary);
+                gradient.addColorStop(0.5, bgSecondary);
+                gradient.addColorStop(1, bgCard);
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, w, h);
 
-                // Grid pattern overlay
-                ctx.strokeStyle = 'rgba(0, 255, 136, 0.05)';
+                // Grid pattern overlay (more subtle)
+                ctx.strokeStyle = this.hexToRgba(accentPrimary, 0.05);
                 ctx.lineWidth = 1;
                 for (let i = 0; i < w; i += 50) {
                     ctx.beginPath();
@@ -217,38 +227,38 @@
                 }
 
                 // Border
-                ctx.strokeStyle = '#00ff88';
+                ctx.strokeStyle = accentPrimary;
                 ctx.lineWidth = 8;
                 ctx.strokeRect(20, 20, w - 40, h - 40);
 
                 // Inner border
-                ctx.strokeStyle = '#00d4ff';
+                ctx.strokeStyle = accentSecondary;
                 ctx.lineWidth = 2;
                 ctx.strokeRect(40, 40, w - 80, h - 80);
 
                 // Station callsign (large, top)
-                ctx.fillStyle = '#00ff88';
+                ctx.fillStyle = accentPrimary;
                 ctx.font = 'bold 120px Orbitron, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(0, 255, 136, 0.8)';
+                ctx.shadowColor = this.hexToRgba(accentPrimary, 0.5);
                 ctx.shadowBlur = 30;
                 ctx.fillText(this.config.callsign, w / 2, 180);
                 ctx.shadowBlur = 0;
 
                 // Operator name and location
-                ctx.fillStyle = '#8b9dc3';
+                ctx.fillStyle = textSecondary;
                 ctx.font = '32px Share Tech Mono, monospace';
                 ctx.fillText(`${this.config.name} - ${this.config.location}`, w / 2, 240);
 
                 // "CONFIRMING QSO WITH" text
-                ctx.fillStyle = '#00d4ff';
+                ctx.fillStyle = accentSecondary;
                 ctx.font = 'bold 42px Orbitron, sans-serif';
                 ctx.fillText('CONFIRMING QSO WITH', w / 2, 340);
 
                 // Contact callsign (very large)
-                ctx.fillStyle = '#00d4ff';
+                ctx.fillStyle = accentSecondary;
                 ctx.font = 'bold 140px Orbitron, sans-serif';
-                ctx.shadowColor = 'rgba(0, 212, 255, 0.8)';
+                ctx.shadowColor = this.hexToRgba(accentSecondary, 0.5);
                 ctx.shadowBlur = 40;
                 ctx.fillText(this.contact.call, w / 2, 480);
                 ctx.shadowBlur = 0;
@@ -258,17 +268,17 @@
                 const boxHeight = 240;
                 
                 // Box background
-                ctx.fillStyle = 'rgba(26, 34, 53, 0.8)';
+                ctx.fillStyle = this.hexToRgba(bgCard, 0.9);
                 ctx.fillRect(100, boxY, w - 200, boxHeight);
                 
                 // Box border
-                ctx.strokeStyle = '#00ff88';
+                ctx.strokeStyle = accentPrimary;
                 ctx.lineWidth = 3;
                 ctx.strokeRect(100, boxY, w - 200, boxHeight);
 
                 // QSO details
                 ctx.textAlign = 'left';
-                ctx.fillStyle = '#8b9dc3';
+                ctx.fillStyle = textSecondary;
                 ctx.font = '28px Share Tech Mono, monospace';
                 
                 const detailsY = boxY + 60;
@@ -282,21 +292,21 @@
                 ctx.fillText('FREQ:', col1X, detailsY + lineHeight * 2);
 
                 // Column 1 values
-                ctx.fillStyle = '#00ff88';
+                ctx.fillStyle = accentPrimary;
                 ctx.font = 'bold 32px Orbitron, sans-serif';
                 ctx.fillText(this.formatDate(this.contact.qso_date), col1X + 150, detailsY);
                 ctx.fillText(this.formatTime(this.contact.time_on) + ' UTC', col1X + 150, detailsY + lineHeight);
                 ctx.fillText((this.contact.freq || '-') + ' MHz', col1X + 150, detailsY + lineHeight * 2);
 
                 // Column 2
-                ctx.fillStyle = '#8b9dc3';
+                ctx.fillStyle = textSecondary;
                 ctx.font = '28px Share Tech Mono, monospace';
                 ctx.fillText('MODE:', col2X, detailsY);
                 ctx.fillText('RST:', col2X, detailsY + lineHeight);
                 ctx.fillText('BAND:', col2X, detailsY + lineHeight * 2);
 
                 // Column 2 values
-                ctx.fillStyle = '#00d4ff';
+                ctx.fillStyle = accentSecondary;
                 ctx.font = 'bold 32px Orbitron, sans-serif';
                 ctx.fillText(this.contact.mode || '-', col2X + 150, detailsY);
                 ctx.fillText(this.contact.rst_rcvd || '-', col2X + 150, detailsY + lineHeight);
@@ -304,15 +314,37 @@
 
                 // Footer - 73
                 ctx.textAlign = 'center';
-                ctx.fillStyle = '#00ff88';
+                ctx.fillStyle = accentPrimary;
                 ctx.font = 'bold 48px Orbitron, sans-serif';
                 ctx.fillText('73', w / 2, h - 50);
 
                 // Add decorative corner elements
-                this.drawCornerDecoration(ctx, 40, 40, 60, '#00ff88');
-                this.drawCornerDecoration(ctx, w - 40, 40, 60, '#00d4ff', true, false);
-                this.drawCornerDecoration(ctx, 40, h - 40, 60, '#00d4ff', false, true);
-                this.drawCornerDecoration(ctx, w - 40, h - 40, 60, '#00ff88', true, true);
+                this.drawCornerDecoration(ctx, 40, 40, 60, accentPrimary);
+                this.drawCornerDecoration(ctx, w - 40, 40, 60, accentSecondary, true, false);
+                this.drawCornerDecoration(ctx, 40, h - 40, 60, accentSecondary, false, true);
+                this.drawCornerDecoration(ctx, w - 40, h - 40, 60, accentPrimary, true, true);
+            }
+
+            hexToRgba(hex, alpha) {
+                // Si ya es rgba o rgb, devolverlo
+                if (hex.startsWith('rgb')) return hex;
+                
+                // Limpiar el hex
+                hex = hex.replace('#', '');
+                
+                // Convertir a RGB
+                let r, g, b;
+                if (hex.length === 3) {
+                    r = parseInt(hex[0] + hex[0], 16);
+                    g = parseInt(hex[1] + hex[1], 16);
+                    b = parseInt(hex[2] + hex[2], 16);
+                } else {
+                    r = parseInt(hex.substring(0, 2), 16);
+                    g = parseInt(hex.substring(2, 4), 16);
+                    b = parseInt(hex.substring(4, 6), 16);
+                }
+                
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
             }
 
             drawCornerDecoration(ctx, x, y, size, color, flipX = false, flipY = false) {
