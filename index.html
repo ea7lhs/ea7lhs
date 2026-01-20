@@ -236,6 +236,7 @@
 
         .activity-grid {
             margin-top: 1rem;
+            overflow: visible;
         }
 
         .activity-months {
@@ -258,6 +259,8 @@
             gap: 3px;
             max-width: 100%;
             overflow-x: auto;
+            padding: 5px;
+            overflow-y: visible;
         }
 
         .activity-weeks::-webkit-scrollbar {
@@ -689,14 +692,12 @@
                     const day = document.createElement('div');
                     day.className = 'activity-day';
                     day.setAttribute('data-level', level);
+                    day.title = `${dateStr}: ${count} QSO${count !== 1 ? 's' : ''}`;
                     
-                    // Only show tooltip and count for dates within the actual year
+                    // Dim days outside the current year
                     const year = currentDate.getFullYear();
-                    if (year === this.year) {
-                        day.title = `${dateStr}: ${count} QSOs`;
-                    } else {
+                    if (year !== this.year) {
                         day.style.opacity = '0.3';
-                        day.title = dateStr;
                     }
                     
                     this.container.appendChild(day);
