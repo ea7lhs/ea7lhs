@@ -253,8 +253,24 @@
 
         .activity-weeks {
             display: grid;
-            grid-template-columns: repeat(53, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+            grid-auto-flow: column;
             gap: 3px;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .activity-weeks::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .activity-weeks::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .activity-weeks::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
         }
 
         .activity-day {
@@ -421,7 +437,10 @@
         @media (max-width: 768px) {
             h1 { font-size: 2rem; }
             .callsign { font-size: 2.5rem; }
-            .activity-weeks { grid-template-columns: repeat(26, 1fr); }
+            .activity-weeks { 
+                grid-template-rows: repeat(7, 1fr);
+                grid-auto-flow: column;
+            }
             .two-column { grid-template-columns: 1fr; }
             .contacts-table { font-size: 0.85rem; }
             .contacts-table th, .contacts-table td { padding: 0.5rem; }
@@ -645,15 +664,24 @@
             render(dailyActivity) {
                 this.container.innerHTML = '';
                 const startDate = new Date(this.year, 0, 1);
+                
+                // Find the first Sunday of the year (or before)
+                const firstDay = new Date(startDate);
+                firstDay.setDate(firstDay.getDate() - firstDay.getDay());
+                
+                // Calculate the last day of the year
                 const endDate = new Date(this.year, 11, 31);
+                const lastDay = new Date(endDate);
+                lastDay.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
                 
                 // Calculate activity levels
                 const activities = Object.values(dailyActivity);
                 const max = Math.max(...activities, 1);
                 
-                let currentDate = new Date(startDate);
+                let currentDate = new Date(firstDay);
                 
-                while (currentDate <= endDate) {
+                // Create days organized by weeks
+                while (currentDate <= lastDay) {
                     const dateStr = currentDate.toISOString().split('T')[0];
                     const count = dailyActivity[dateStr] || 0;
                     const level = this.getLevel(count, max);
@@ -661,7 +689,15 @@
                     const day = document.createElement('div');
                     day.className = 'activity-day';
                     day.setAttribute('data-level', level);
-                    day.title = `${dateStr}: ${count} QSOs`;
+                    
+                    // Only show tooltip and count for dates within the actual year
+                    const year = currentDate.getFullYear();
+                    if (year === this.year) {
+                        day.title = `${dateStr}: ${count} QSOs`;
+                    } else {
+                        day.style.opacity = '0.3';
+                        day.title = dateStr;
+                    }
                     
                     this.container.appendChild(day);
                     currentDate.setDate(currentDate.getDate() + 1);
