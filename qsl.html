@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QSL Card Generator</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* Critical CSS - Previene FOUC */
+        body {
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+        }
+        body.styles-loaded {
+            opacity: 1;
+        }
+    </style>
     <script>
         // Load CSS from config
         (async function loadCSS() {
@@ -14,12 +24,26 @@
                 const link = document.createElement('link');
                 link.rel = 'stylesheet';
                 link.href = config.cssFile || 'default.css';
+                
+                // Mostrar body cuando el CSS se cargue
+                link.onload = function() {
+                    document.body.classList.add('styles-loaded');
+                };
+                
+                // Fallback por si acaso
+                setTimeout(function() {
+                    document.body.classList.add('styles-loaded');
+                }, 1000);
+                
                 document.head.appendChild(link);
             } catch (error) {
                 console.error('Error loading CSS config:', error);
                 const link = document.createElement('link');
                 link.rel = 'stylesheet';
                 link.href = 'default.css';
+                link.onload = function() {
+                    document.body.classList.add('styles-loaded');
+                };
                 document.head.appendChild(link);
             }
         })();
