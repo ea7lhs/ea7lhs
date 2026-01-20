@@ -2,7 +2,7 @@
   "callsign": "EA7LHS",
   "name": "Daniel",
   "location": "Loja, Spain",
-  "cssFile": "brutalist.css",
+  "cssFile": "neumorphism.css",
   "qslBackgroundImage": "bg.jpg",
   "qslBackgroundBlur": 4,
   "qslBackgroundOpacity": 0.9,
