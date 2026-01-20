@@ -432,6 +432,29 @@
             color: var(--accent-secondary);
         }
 
+        .qsl-btn {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            background: rgba(255, 51, 102, 0.2);
+            border: 1px solid var(--accent-tertiary);
+            border-radius: 3px;
+            color: var(--accent-tertiary);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .qsl-btn:hover {
+            background: var(--accent-tertiary);
+            color: var(--bg-primary);
+            box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+            transform: scale(1.05);
+        }
+
         .top-list {
             display: grid;
             gap: 1rem;
@@ -670,6 +693,7 @@
                                 <th>Country</th>
                                 <th>Mode</th>
                                 <th>Band</th>
+                                <th>QSL</th>
                             </tr>
                         </thead>
                         <tbody id="recent-contacts"></tbody>
@@ -775,6 +799,15 @@
                 const hours = padded.substring(0, 2);
                 const minutes = padded.substring(2, 4);
                 return `${hours}:${minutes}`;
+            }
+
+            getQSLUrl(contact) {
+                const params = new URLSearchParams({
+                    call: contact.call,
+                    date: contact.qso_date || '',
+                    time: contact.time_on || ''
+                });
+                return `qsl.html?${params.toString()}`;
             }
 
             getRecentContacts(limit = 20) {
@@ -958,6 +991,7 @@
                         <td class="country-cell">${contact.country || '-'}</td>
                         <td><span class="mode-badge">${contact.mode || '-'}</span></td>
                         <td><span class="band-badge">${contact.band || '-'}</span></td>
+                        <td><a href="${parser.getQSLUrl(contact)}" class="qsl-btn" target="_blank">View QSL</a></td>
                     </tr>
                 `).join('');
                 
@@ -1062,6 +1096,7 @@
                                 <th>Country</th>
                                 <th>Mode</th>
                                 <th>Band</th>
+                                <th>QSL</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1074,6 +1109,7 @@
                                     <td class="country-cell">${contact.country || '-'}</td>
                                     <td><span class="mode-badge">${contact.mode || '-'}</span></td>
                                     <td><span class="band-badge">${contact.band || '-'}</span></td>
+                                    <td><a href="${parser.getQSLUrl(contact)}" class="qsl-btn" target="_blank">View QSL</a></td>
                                 </tr>
                             `).join('')}
                         </tbody>
