@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QSL Card Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #151b2e;
+            --bg-card: #1a2235;
+            --accent-primary: #00ff88;
+            --accent-secondary: #00d4ff;
+            --accent-tertiary: #ff3366;
+            --text-primary: #e8f0f2;
+            --text-secondary: #8b9dc3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 255, 136, 0.03), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 212, 255, 0.03), transparent 40%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border: 2px solid var(--accent-primary);
+            border-radius: 4px;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+
+        .card-preview {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 4px;
+            border: 2px solid var(--accent-primary);
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        #qsl-canvas {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid var(--accent-secondary);
+            border-radius: 4px;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            background: var(--accent-primary);
+            border: none;
+            border-radius: 4px;
+            color: var(--bg-primary);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--accent-secondary);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--accent-primary);
+            border: 2px solid var(--accent-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        .error {
+            background: rgba(255, 51, 102, 0.1);
+            border: 2px solid var(--accent-tertiary);
+            padding: 2rem;
+            border-radius: 4px;
+            text-align: center;
+            color: var(--accent-tertiary);
+        }
+
+        .info-box {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 4px;
+            border-left: 3px solid var(--accent-primary);
+            margin-bottom: 2rem;
+        }
+
+        .info-box h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: var(--accent-primary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            font-size: 1.5rem;
+            color: var(--accent-primary);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .container { padding: 1rem; }
+            .controls { flex-direction: column; width: 100%; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>QSL Card Generator</h1>
+            <div class="subtitle">73 de <span id="station-call">EA7LHS</span></div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            [GENERATING QSL CARD...]
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <h2>ERROR</h2>
+            <p id="error-message"></p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="info-box">
+                <h3>Contact Details</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Callsign</div>
+                        <div class="info-value" id="info-call">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Date</div>
+                        <div class="info-value" id="info-date">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Time</div>
+                        <div class="info-value" id="info-time">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Frequency</div>
+                        <div class="info-value" id="info-freq">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Mode</div>
+                        <div class="info-value" id="info-mode">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">RST</div>
+                        <div class="info-value" id="info-rst">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-preview">
+                <canvas id="qsl-canvas" width="1400" height="900"></canvas>
+                <div class="controls">
+                    <button class="btn" id="download-btn">Download QSL Card</button>
+                    <button class="btn btn-secondary" id="regenerate-btn">Regenerate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class QSLGenerator {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.contact = null;
+                this.config = null;
+            }
+
+            async loadConfig() {
+                try {
+                    const response = await fetch('config.json');
+                    if (!response.ok) {
+                        return {
+                            callsign: "EA7LHS",
+                            name: "Daniel",
+                            location: "Loja, Spain"
+                        };
+                    }
+                    return await response.json();
+                } catch (error) {
+                    return {
+                        callsign: "EA7LHS",
+                        name: "Daniel",
+                        location: "Loja, Spain"
+                    };
+                }
+            }
+
+            async verifyContact(call, date, time) {
+                try {
+                    const response = await fetch('logbook.adi');
+                    if (!response.ok) throw new Error('Logbook not found');
+                    
+                    const text = await response.text();
+                    const records = text.split('<eor>');
+                    
+                    for (let record of records) {
+                        if (record.trim().length === 0 || record.includes('<eoh>')) continue;
+                        
+                        const contact = {};
+                        const fieldRegex = /<(\w+):(\d+)>([^<]*)/g;
+                        let match;
+                        
+                        while ((match = fieldRegex.exec(record)) !== null) {
+                            const [, fieldName, , fieldValue] = match;
+                            contact[fieldName.toLowerCase()] = fieldValue.trim();
+                        }
+                        
+                        // Verify this is the contact we're looking for
+                        if (contact.call === call.toUpperCase()) {
+                            if (date && contact.qso_date !== date) continue;
+                            if (time && contact.time_on !== time) continue;
+                            return contact;
+                        }
+                    }
+                    
+                    return null;
+                } catch (error) {
+                    console.error('Error verifying contact:', error);
+                    return null;
+                }
+            }
+
+            formatDate(adiDate) {
+                if (!adiDate || adiDate.length !== 8) return '';
+                const year = adiDate.substring(0, 4);
+                const month = adiDate.substring(4, 6);
+                const day = adiDate.substring(6, 8);
+                return `${day}/${month}/${year}`;
+            }
+
+            formatTime(adiTime) {
+                if (!adiTime) return '';
+                const padded = adiTime.padStart(4, '0');
+                const hours = padded.substring(0, 2);
+                const minutes = padded.substring(2, 4);
+                return `${hours}:${minutes}`;
+            }
+
+            drawCard() {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+
+                // Background gradient
+                const gradient = ctx.createLinearGradient(0, 0, w, h);
+                gradient.addColorStop(0, '#0a0e1a');
+                gradient.addColorStop(0.5, '#151b2e');
+                gradient.addColorStop(1, '#1a2235');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, w, h);
+
+                // Grid pattern overlay
+                ctx.strokeStyle = 'rgba(0, 255, 136, 0.05)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < w; i += 50) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, h);
+                    ctx.stroke();
+                }
+                for (let i = 0; i < h; i += 50) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(w, i);
+                    ctx.stroke();
+                }
+
+                // Border
+                ctx.strokeStyle = '#00ff88';
+                ctx.lineWidth = 8;
+                ctx.strokeRect(20, 20, w - 40, h - 40);
+
+                // Inner border
+                ctx.strokeStyle = '#00d4ff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(40, 40, w - 80, h - 80);
+
+                // Station callsign (large, top)
+                ctx.fillStyle = '#00ff88';
+                ctx.font = 'bold 120px Orbitron, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(0, 255, 136, 0.8)';
+                ctx.shadowBlur = 30;
+                ctx.fillText(this.config.callsign, w / 2, 180);
+                ctx.shadowBlur = 0;
+
+                // Operator name and location
+                ctx.fillStyle = '#8b9dc3';
+                ctx.font = '32px Share Tech Mono, monospace';
+                ctx.fillText(`${this.config.name} - ${this.config.location}`, w / 2, 240);
+
+                // "CONFIRMING QSO WITH" text
+                ctx.fillStyle = '#00d4ff';
+                ctx.font = 'bold 42px Orbitron, sans-serif';
+                ctx.fillText('CONFIRMING QSO WITH', w / 2, 340);
+
+                // Contact callsign (very large)
+                ctx.fillStyle = '#00d4ff';
+                ctx.font = 'bold 140px Orbitron, sans-serif';
+                ctx.shadowColor = 'rgba(0, 212, 255, 0.8)';
+                ctx.shadowBlur = 40;
+                ctx.fillText(this.contact.call, w / 2, 480);
+                ctx.shadowBlur = 0;
+
+                // QSO Details box
+                const boxY = 560;
+                const boxHeight = 240;
+                
+                // Box background
+                ctx.fillStyle = 'rgba(26, 34, 53, 0.8)';
+                ctx.fillRect(100, boxY, w - 200, boxHeight);
+                
+                // Box border
+                ctx.strokeStyle = '#00ff88';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(100, boxY, w - 200, boxHeight);
+
+                // QSO details
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#8b9dc3';
+                ctx.font = '28px Share Tech Mono, monospace';
+                
+                const detailsY = boxY + 60;
+                const col1X = 150;
+                const col2X = w / 2 + 50;
+                const lineHeight = 55;
+
+                // Column 1
+                ctx.fillText('DATE:', col1X, detailsY);
+                ctx.fillText('TIME:', col1X, detailsY + lineHeight);
+                ctx.fillText('FREQ:', col1X, detailsY + lineHeight * 2);
+
+                // Column 1 values
+                ctx.fillStyle = '#00ff88';
+                ctx.font = 'bold 32px Orbitron, sans-serif';
+                ctx.fillText(this.formatDate(this.contact.qso_date), col1X + 150, detailsY);
+                ctx.fillText(this.formatTime(this.contact.time_on) + ' UTC', col1X + 150, detailsY + lineHeight);
+                ctx.fillText((this.contact.freq || '-') + ' MHz', col1X + 150, detailsY + lineHeight * 2);
+
+                // Column 2
+                ctx.fillStyle = '#8b9dc3';
+                ctx.font = '28px Share Tech Mono, monospace';
+                ctx.fillText('MODE:', col2X, detailsY);
+                ctx.fillText('RST:', col2X, detailsY + lineHeight);
+                ctx.fillText('BAND:', col2X, detailsY + lineHeight * 2);
+
+                // Column 2 values
+                ctx.fillStyle = '#00d4ff';
+                ctx.font = 'bold 32px Orbitron, sans-serif';
+                ctx.fillText(this.contact.mode || '-', col2X + 150, detailsY);
+                ctx.fillText(this.contact.rst_rcvd || '-', col2X + 150, detailsY + lineHeight);
+                ctx.fillText(this.contact.band || '-', col2X + 150, detailsY + lineHeight * 2);
+
+                // Footer - 73
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#00ff88';
+                ctx.font = 'bold 48px Orbitron, sans-serif';
+                ctx.fillText('73', w / 2, h - 50);
+
+                // Add decorative corner elements
+                this.drawCornerDecoration(ctx, 40, 40, 60, '#00ff88');
+                this.drawCornerDecoration(ctx, w - 40, 40, 60, '#00d4ff', true, false);
+                this.drawCornerDecoration(ctx, 40, h - 40, 60, '#00d4ff', false, true);
+                this.drawCornerDecoration(ctx, w - 40, h - 40, 60, '#00ff88', true, true);
+            }
+
+            drawCornerDecoration(ctx, x, y, size, color, flipX = false, flipY = false) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                
+                const dx = flipX ? -1 : 1;
+                const dy = flipY ? -1 : 1;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + (size * dx), y);
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y + (size * dy));
+                
+                ctx.moveTo(x + (20 * dx), y + (20 * dy));
+                ctx.lineTo(x + (40 * dx), y + (20 * dy));
+                ctx.lineTo(x + (40 * dx), y + (40 * dy));
+                ctx.lineTo(x + (20 * dx), y + (40 * dy));
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            downloadCard() {
+                const link = document.createElement('a');
+                const filename = `QSL_${this.config.callsign}_${this.contact.call}_${this.formatDate(this.contact.qso_date).replace(/\//g, '-')}.png`;
+                link.download = filename;
+                link.href = this.canvas.toDataURL('image/png');
+                link.click();
+            }
+        }
+
+        // Parse URL parameters
+        function getURLParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                call: params.get('call'),
+                date: params.get('date'),
+                time: params.get('time')
+            };
+        }
+
+        // Main initialization
+        async function init() {
+            const params = getURLParams();
+            
+            if (!params.call) {
+                showError('No callsign provided. Please use URL parameters: ?call=CALLSIGN&date=YYYYMMDD&time=HHMM');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+
+            const generator = new QSLGenerator('qsl-canvas');
+            generator.config = await generator.loadConfig();
+            
+            // Update station callsign in header
+            document.getElementById('station-call').textContent = generator.config.callsign;
+
+            // Verify contact exists in logbook
+            const contact = await generator.verifyContact(params.call, params.date, params.time);
+            
+            if (!contact) {
+                showError(`Contact not found in logbook: ${params.call}${params.date ? ' on ' + params.date : ''}`);
+                return;
+            }
+
+            generator.contact = contact;
+
+            // Update info display
+            document.getElementById('info-call').textContent = contact.call;
+            document.getElementById('info-date').textContent = generator.formatDate(contact.qso_date);
+            document.getElementById('info-time').textContent = generator.formatTime(contact.time_on) + ' UTC';
+            document.getElementById('info-freq').textContent = (contact.freq || '-') + ' MHz';
+            document.getElementById('info-mode').textContent = contact.mode || '-';
+            document.getElementById('info-rst').textContent = contact.rst_rcvd || '-';
+
+            // Generate QSL card
+            generator.drawCard();
+
+            // Setup download button
+            document.getElementById('download-btn').addEventListener('click', () => {
+                generator.downloadCard();
+            });
+
+            // Setup regenerate button
+            document.getElementById('regenerate-btn').addEventListener('click', () => {
+                generator.drawCard();
+            });
+
+            // Show content
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error').style.display = 'block';
+        }
+
+        // Start when page loads
+        init();
+    </script>
+</body>
+</html>
