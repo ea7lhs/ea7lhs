@@ -364,7 +364,7 @@ h1 {
 
 .contacts-table tr:hover td {
     color: var(--bg-primary);
-    border-color: var(--bg-primary);
+    border-color: var(--accent-primary);
 }
 
 .callsign-cell {
@@ -396,8 +396,9 @@ h1 {
 }
 
 .contacts-table tr:hover .mode-badge {
-    background: var(--bg-primary);
-    border-color: var(--bg-primary);
+    background: var(--accent-secondary);
+    border-color: var(--accent-secondary);
+    color: var(--bg-primary);
 }
 
 .band-badge {
